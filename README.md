@@ -12,8 +12,8 @@ a python script to stream music from GrooveShark by twitting command
 ### Dependencies
 Here are the libraries and programs used, use `pip` to install 
 
-$ pip install -r requirements.txt
-$ sudo apt-get install mpg123
+    $ pip install -r requirements.txt
+    $ sudo apt-get install mpg123
 
 - [`mpg123`](http://www.mpg123.de/) - version 1.15.1
 - [`tweepy`](https://github.com/tweepy/tweepy) - version 2.0
