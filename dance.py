@@ -223,7 +223,6 @@ if __name__ == '__main__':
 		# process the tweet
 		player.parseTweet(tweet)
 		
-		# rate limit is 350 per hour, thats every 11 second (3600s / 350 = 11s)
-		# we use 15s just for safe
-		time.sleep(15)
-		
+		# since twitter api v1.1 rate limit for mentions_timeline 15 per 15-minute window, 
+		# thats every 60 second per request!
+		time.sleep(60)
