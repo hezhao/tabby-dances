@@ -3,27 +3,14 @@ import sys
 import time
 import logging
 from subprocess import Popen
-
-rootDir = os.path.dirname(os.path.realpath(__file__))
-if rootDir[-1] == ';':rootDir = rootDir[0:-1]
-libGrooveDir = os.path.join(rootDir, 'groove-dl')
-sys.path.append(libGrooveDir)
-
 import tweepy
-import groove
+from config import TWITTER_SETTINGS, APP_SETTINGS
+import groove_dl.groove as groove
 
-# Your App (Tabby Dances) 
-consumer_key=<YOUR_CONSUMER_KEY_HERE>
-consumer_secret=<YOUR_CONSUMER_SECRET_HERE>
 
-# User (@wktabby)
-access_token_key = <YOUR_ACCESS_TOKEN_KEY_HERE>
-access_token_secret = <YOUR_ACCESS_TOKEN_SECRET_HERE>
-
-# file paths (change them accordingly)
-db = '/home/pi/tabby-dances/lastmentionid.txt'
-log = '/home/pi/tabby-dances/tabby.log'
-mpg123_path = '/usr/bin/mpg123'
+db = APP_SETTINGS['db']
+log = APP_SETTINGS['log']
+mpg123_path = APP_SETTINGS['mpg123_path']
 
 def printUnicode(str):
 	'''
@@ -123,7 +110,7 @@ class TabbyPlayer:
 		# play song: '@wktabby play <song/musician name>'
 		if cmd[1] == 'play':
 			query = ' '.join(cmd[2:])
-			printUnicode(query)
+			logger.info(query)
 			self.mention_from = tweet.user.screen_name
 			self.in_reply_to_status_id = tweet.id
 			self.grooveStream(query)
@@ -206,8 +193,8 @@ if __name__ == '__main__':
 
 	### 1. Authenticate with Twitter ###
 	
-	auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
-	auth.set_access_token(access_token_key, access_token_secret)
+	auth = tweepy.OAuthHandler(TWITTER_SETTINGS['consumer_key'], TWITTER_SETTINGS['consumer_secret'])
+	auth.set_access_token(TWITTER_SETTINGS['access_token_key'], TWITTER_SETTINGS['access_token_secret'])
 	api = tweepy.API(auth)
 	logger.info('Ready to post to ' + api.me().name)
 
@@ -226,3 +213,4 @@ if __name__ == '__main__':
 		# since twitter api v1.1 rate limit for mentions_timeline 15 per 15-minute window, 
 		# thats every 60 second per request!
 		time.sleep(60)
+		
