@@ -1,1 +1,2 @@
-tweepy
+git+https://github.com/hezhao/tweepy#egg=tweepy_zhao
+

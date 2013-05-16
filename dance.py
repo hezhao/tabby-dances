@@ -1,33 +1,32 @@
 import os
 import sys
 import time
-import logging
+import random
 from subprocess import Popen
 import tweepy
 from config import TWITTER_SETTINGS, APP_SETTINGS
 import groove_dl.groove as groove
 
 
-db = APP_SETTINGS['db']
-log = APP_SETTINGS['log']
 mpg123_path = APP_SETTINGS['mpg123_path']
 
-def printUnicode(str):
-    '''
-    Print debug information, by default python 2 is ascii encoded in xbmc 
-    '''
-    print str.encode('utf-8')
-
-
-class TabbyPlayer(tweepy.StreamListener):
+class TabbyPlayer():
     def __init__(self):
         self.api = None
         self.proc = None
         self.tag = None
         self.mention_from = None
         self.in_reply_to_status_id = None
-        self.artist = ''
-        self.title = ''
+        self.artist = None
+        self.title = None
+
+    def tabbyLogger(self, msg, level='INFO'):
+        '''
+        Python logging module sucks, I only print simple messages
+        with timestamp in console
+        '''
+        timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        print '[%s %s] %s' % (level, timestamp, msg)
 
     def tweetCurrentSong(self):
         '''
@@ -41,17 +40,18 @@ class TabbyPlayer(tweepy.StreamListener):
             tweet = '@' + self.mention_from + ' I am ' + verbs[random.randint(0,2)] + ' to ' + self.title + ' by ' + self.artist + ' right meow!'
             self.api.update_status(tweet, self.in_reply_to_status_id)
         except Exception, e:
-            logger.error(str(e))
+            self.tabbyLogger(str(e), 'ERROR')
             return
-        logger.info(tweet)
+        self.tabbyLogger(tweet)
 
     def play(self, songUrl):
         '''
         Play song with mpg123 asynchronously
         '''
-        procLog = open(os.path.expanduser(log), 'w')
-        self.proc = Popen([mpg123_path, songUrl], stderr = procLog, stdout = procLog)
-        logger.info('Playing...' + songUrl)
+        # procLog = open(os.path.expanduser(log), 'w')
+        # self.proc = Popen([mpg123_path, songUrl], stderr = procLog, stdout = procLog)
+        self.proc = Popen([mpg123_path, songUrl])
+        self.tabbyLogger('Playing...' + songUrl)
 
     def isPlaying(self):
         '''
@@ -84,7 +84,7 @@ class TabbyPlayer(tweepy.StreamListener):
         # play song: '@wktabby play <song/musician name>'
         if cmd[1] == 'play':
             query = ' '.join(cmd[2:])
-            print query
+            self.tabbyLogger(query)
             self.mention_from = tweet.user.screen_name
             self.in_reply_to_status_id = tweet.id
             self.grooveStream(query)
@@ -102,55 +102,27 @@ class TabbyPlayer(tweepy.StreamListener):
             try:
                 self.api.update_status(tweet, self.in_reply_to_status_id)
             except Exception, e:
-                logger.error(str(e))
+                self.tabbyLogger(str(e), 'ERROR')
                 return
-            logger.info(tweet)
+            self.tabbyLogger(tweet)
 
-    def searchLatestAtMention(self, tweets):
-        '''
-        Search the latest @mention tweets
-        '''
-        # reset tweet info
-        self.mention_from = None
-        self.in_reply_to_status_id = None
-        
-        # only check @mentions when player is idle
-        if self.isPlaying():
-            logger.info('Song is playing...')
-            return None
-
-        # process tweets if there are any
-        if len(tweets) > 0:
-            
-            # print all @mention tweets from last mention
-            for t in tweets:
-                logger.info(str(t.id) + ' :: ' + t.user.screen_name + ' :: ' + t.text)
-            
-            # find the latest tweet if there are more than one
-            tweet = tweets[0]
-            return tweet
-        
-        # no new tweets from last mention
-        return None
-
-
-    def playLastestMentionSong(self, tweets):
+    def playLastestMentionSong(self, tweet):
         '''
         Parse tweet and play song
         '''
-        logger.info(':playLastestMentionSong')
+        self.tabbyLogger(':playLastestMentionSong')
         if self.api == None:
-            auth = tweepy.OAuthHandler(TWITTER_SETTINGS['consumer_key'], TWITTER_SETTINGS['consumer_secret'])
-            auth.set_access_token(TWITTER_SETTINGS['access_token_key'], TWITTER_SETTINGS['access_token_secret'])
             self.api = tweepy.API(auth)
-        for tweet in tweets:
-            print tweet.id, tweet.text
-            tweet = self.searchLatestAtMention(tweets)
-            self.parseTweet(tweet)
+        self.parseTweet(tweet)
 
+
+
+class TwitterStreamListener(tweepy.StreamListener):
     def on_status(self, status):
-        self.playLastestMentionSong(status);
-
+        print('@' + status.user.screen_name + ' ' + status.text)
+        player = TabbyPlayer()
+        player.playLastestMentionSong(status)
+        
     def on_error(self, status_code):
         print >> sys.stderr, 'Encountered error with status code:', status_code
         return True # Don't kill the stream
@@ -161,30 +133,13 @@ class TabbyPlayer(tweepy.StreamListener):
 
 
 if __name__ == '__main__':
+        
+    ### 1. Authentication setup ###
     
-    ### 0. Logger setup
-
-    logger = logging.getLogger('TabbyDances')
-    logger.setLevel(logging.DEBUG)
-    # create file handler which logs even debug messages
-    fh = logging.FileHandler(log)
-    fh.setLevel(logging.DEBUG)
-    # create console handler with a higher log level
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
-    # create formatter and add it to the handlers
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    ch.setFormatter(formatter)
-    fh.setFormatter(formatter)
-    # add the handlers to logger
-    logger.addHandler(ch)
-    logger.addHandler(fh)
-
+    auth = tweepy.OAuthHandler(TWITTER_SETTINGS['consumer_key'], TWITTER_SETTINGS['consumer_secret'])
+    auth.set_access_token(TWITTER_SETTINGS['access_token_key'], TWITTER_SETTINGS['access_token_secret'])
     
-    ### 1. Listener to search and process twitter @mention ###
-    
-    # player = TabbyPlayer()
-    # player.start()
+    ### 2. Listener to search and process twitter @mention ###
 
-    sapi = tweepy.streaming.Stream(auth, TabbyPlayer())
+    sapi = tweepy.streaming.Stream(auth, TwitterStreamListener())
     sapi.filter(track=['@wktabby'])
