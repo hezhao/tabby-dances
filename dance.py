@@ -34,8 +34,6 @@ class TabbyPlayer():
         '''
         tweet = None
         try:
-            #if self.in_reply_to_status_id and self.mention_from:
-            # streaming from grooveshark (in response to twitter)
             verbs =['dancing','jamming', 'shaking']
             tweet = '@' + self.mention_from + ' I am ' + verbs[random.randint(0,2)] + ' to ' + self.title + ' by ' + self.artist + ' right meow!'
             self.api.update_status(tweet, self.in_reply_to_status_id)
@@ -48,8 +46,6 @@ class TabbyPlayer():
         '''
         Play song with mpg123 asynchronously
         '''
-        # procLog = open(os.path.expanduser(log), 'w')
-        # self.proc = Popen([mpg123_path, songUrl], stderr = procLog, stdout = procLog)
         self.proc = Popen([mpg123_path, songUrl])
         self.tabbyLogger('Playing...' + songUrl)
 
