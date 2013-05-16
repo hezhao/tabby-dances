@@ -16,7 +16,7 @@ Here are the libraries and programs used, use `pip` to install
     $ sudo apt-get install mpg123
 
 - [`mpg123`](http://www.mpg123.de/) - version 1.15.1
-- [`tweepy`](https://github.com/tweepy/tweepy) - version 2.0
+- [`tweepy`](https://github.com/hezhao/tweepy) - my fork on tweepy which handles SSLError to remove crashes
 - [`groove-dl`](https://github.com/jacktheripper51/groove-dl) - modified version, already included in source code
 
 
