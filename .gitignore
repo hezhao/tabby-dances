@@ -34,8 +34,7 @@ nosetests.xml
 .project
 .pydevproject
 
+
+# Personal
 .DS_Store
-
-config.py
-
 config.py
