@@ -19,42 +19,15 @@ def printUnicode(str):
     print str.encode('utf-8')
 
 
-class TabbyPlayer:
+class TabbyPlayer(tweepy.StreamListener):
     def __init__(self):
+        self.api = None
         self.proc = None
         self.tag = None
         self.mention_from = None
         self.in_reply_to_status_id = None
         self.artist = ''
         self.title = ''
-        self.last_mention_id = None
-        self.readLastMentionId()
-    
-    def readLastMentionId(self):
-        '''
-        Read last mention id from database file, will create one if the file does not exist
-        '''
-        # create db file if not exist
-        if not os.path.exists(db):
-            f = open(db, 'w+')
-            self.last_mention_id = 1
-            f.close()
-            return
-
-        # read from db file
-        f = open(db, 'r')
-        s = f.readline()
-        self.last_mention_id = int(s)
-        f.close()
-
-    def writeLastMentionId(self, last_mention_id):
-        '''
-        Write last mention id to database file
-        '''
-        self.last_mention_id = last_mention_id
-        f = open(db, 'w+')
-        f.write('%d\n' % last_mention_id)
-        f.close()
 
     def tweetCurrentSong(self):
         '''
@@ -64,8 +37,9 @@ class TabbyPlayer:
         try:
             #if self.in_reply_to_status_id and self.mention_from:
             # streaming from grooveshark (in response to twitter)
-            tweet = '@' + self.mention_from + ' I am dancing to ' + self.title + ' by ' + self.artist + ' right meow! '
-            api.update_status(tweet, self.in_reply_to_status_id)
+            verbs =['dancing','jamming', 'shaking']
+            tweet = '@' + self.mention_from + ' I am ' + verbs[random.randint(0,2)] + ' to ' + self.title + ' by ' + self.artist + ' right meow!'
+            self.api.update_status(tweet, self.in_reply_to_status_id)
         except Exception, e:
             logger.error(str(e))
             return
@@ -105,18 +79,15 @@ class TabbyPlayer:
         
         # split that tweet into list
         cmd = tweet.text.lower().split()
-        
+
         # pass tweet and only match the following command(s)
         # play song: '@wktabby play <song/musician name>'
         if cmd[1] == 'play':
             query = ' '.join(cmd[2:])
-            logger.info(query)
+            print query
             self.mention_from = tweet.user.screen_name
             self.in_reply_to_status_id = tweet.id
             self.grooveStream(query)
-        
-        # save the tweet id so that next time search from new tweet since here 
-        self.writeLastMentionId(tweet.id)
 
     def grooveStream(self, query):
         '''
@@ -129,13 +100,13 @@ class TabbyPlayer:
         else:
             tweet = '@' + self.mention_from + ' Sorry I didn\'t find ' + '"' + query + '"'
             try:
-                api.update_status(tweet, self.in_reply_to_status_id)
+                self.api.update_status(tweet, self.in_reply_to_status_id)
             except Exception, e:
                 logger.error(str(e))
                 return
             logger.info(tweet)
 
-    def searchLatestAtMention(self):
+    def searchLatestAtMention(self, tweets):
         '''
         Search the latest @mention tweets
         '''
@@ -147,15 +118,7 @@ class TabbyPlayer:
         if self.isPlaying():
             logger.info('Song is playing...')
             return None
-        
-        # get all @mention tweets from last mention
-        try:
-            tweets = api.mentions_timeline(since_id = self.last_mention_id)
-            logger.info('last_mention_id = %d' % self.last_mention_id)
-        except Exception, e:
-            logger.exception(str(e))
-            return
-        
+
         # process tweets if there are any
         if len(tweets) > 0:
             
@@ -171,9 +134,36 @@ class TabbyPlayer:
         return None
 
 
+    def playLastestMentionSong(self, tweets):
+        '''
+        Parse tweet and play song
+        '''
+        logger.info(':playLastestMentionSong')
+        if self.api == None:
+            auth = tweepy.OAuthHandler(TWITTER_SETTINGS['consumer_key'], TWITTER_SETTINGS['consumer_secret'])
+            auth.set_access_token(TWITTER_SETTINGS['access_token_key'], TWITTER_SETTINGS['access_token_secret'])
+            self.api = tweepy.API(auth)
+        for tweet in tweets:
+            print tweet.id, tweet.text
+            tweet = self.searchLatestAtMention(tweets)
+            self.parseTweet(tweet)
+
+    def on_status(self, status):
+        self.playLastestMentionSong(status);
+
+    def on_error(self, status_code):
+        print >> sys.stderr, 'Encountered error with status code:', status_code
+        return True # Don't kill the stream
+
+    def on_timeout(self):
+        print >> sys.stderr, 'Timeout...'
+        return True # Don't kill the stream
+
+
 if __name__ == '__main__':
     
     ### 0. Logger setup
+
     logger = logging.getLogger('TabbyDances')
     logger.setLevel(logging.DEBUG)
     # create file handler which logs even debug messages
@@ -181,7 +171,7 @@ if __name__ == '__main__':
     fh.setLevel(logging.DEBUG)
     # create console handler with a higher log level
     ch = logging.StreamHandler()
-    ch.setLevel(logging.ERROR)
+    ch.setLevel(logging.DEBUG)
     # create formatter and add it to the handlers
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     ch.setFormatter(formatter)
@@ -190,27 +180,11 @@ if __name__ == '__main__':
     logger.addHandler(ch)
     logger.addHandler(fh)
 
+    
+    ### 1. Listener to search and process twitter @mention ###
+    
+    # player = TabbyPlayer()
+    # player.start()
 
-    ### 1. Authenticate with Twitter ###
-    
-    auth = tweepy.OAuthHandler(TWITTER_SETTINGS['consumer_key'], TWITTER_SETTINGS['consumer_secret'])
-    auth.set_access_token(TWITTER_SETTINGS['access_token_key'], TWITTER_SETTINGS['access_token_secret'])
-    api = tweepy.API(auth)
-    logger.info('Ready to post to ' + api.me().name)
-
-    ### 2. While loop to search and process twitter @mention ###
-    
-    player = TabbyPlayer()
-    
-    while 1:
-        
-        # find latest tweet
-        tweet = player.searchLatestAtMention()
-        
-        # process the tweet
-        player.parseTweet(tweet)
-        
-        # since twitter api v1.1 rate limit for mentions_timeline 15 per 15-minute window, 
-        # thats every 60 second per request!
-        time.sleep(60)
-        
+    sapi = tweepy.streaming.Stream(auth, TabbyPlayer())
+    sapi.filter(track=['@wktabby'])
