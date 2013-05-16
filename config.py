@@ -9,7 +9,5 @@ TWITTER_SETTINGS = {
 }
 
 APP_SETTINGS = {
-    'db': 'lastmentionid.txt',
-    'log': 'tabby.log',
     'mpg123_path': <PATH_OF_MPG123>
 }
