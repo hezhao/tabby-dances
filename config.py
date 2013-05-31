@@ -8,6 +8,11 @@ TWITTER_SETTINGS = {
     'access_token_secret': <YOUR_ACCESS_TOKEN_SECRET_HERE>
 }
 
+GROOVESHARK_SETTINGS = {
+    'key' = <YOUR_KEY_HERE>,
+    'secret' = <YOUR_SECRET_HERE>
+}
+
 APP_SETTINGS = {
     'mpg123_path': <PATH_OF_MPG123>
 }
