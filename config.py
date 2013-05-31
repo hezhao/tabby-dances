@@ -9,8 +9,8 @@ TWITTER_SETTINGS = {
 }
 
 GROOVESHARK_SETTINGS = {
-    'key' = <YOUR_KEY_HERE>,
-    'secret' = <YOUR_SECRET_HERE>
+    'key': <YOUR_KEY_HERE>,
+    'secret': <YOUR_SECRET_HERE>
 }
 
 APP_SETTINGS = {
