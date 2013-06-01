@@ -4,8 +4,8 @@ import time
 import random
 from subprocess import Popen
 import tweepy
-from config import TWITTER_SETTINGS, APP_SETTINGS
-import groove_dl.groove as groove
+from config import TWITTER_SETTINGS, GROOVESHARK_SETTINGS, APP_SETTINGS
+import grooveshark
 
 
 mpg123_path = APP_SETTINGS['mpg123_path']
@@ -89,7 +89,8 @@ class TabbyPlayer():
         '''
         Retrive URL, artist, title with query from GrooveShark
         '''
-        songUrl, self.artist, self.title = groove.retrieveSongUrl(query)
+        grooveshark.init(GROOVESHARK_SETTINGS['key'], GROOVESHARK_SETTINGS['secret'])
+        songUrl, self.artist, self.title = grooveshark.get_stream_from_query(query)
         if songUrl:
             self.play(songUrl)
             self.tweetCurrentSong()

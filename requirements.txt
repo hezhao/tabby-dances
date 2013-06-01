@@ -1,1 +1,2 @@
 -e git+https://github.com/hezhao/tweepy#egg=tweepy_zhao
+-e git+https://github.com/hezhao/Grooveshark#egg=grooveshark
