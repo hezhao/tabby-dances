@@ -15,9 +15,9 @@ Here are the libraries and programs used, use `pip` to install
     $ pip install -r requirements.txt
     $ sudo apt-get install mpg123
 
-- [`mpg123`](http://www.mpg123.de/) - version 1.15.1
-- [`tweepy`](https://github.com/hezhao/tweepy) - my fork on tweepy which handles SSLError to remove crashes
-- [`groove-dl`](https://github.com/jacktheripper51/groove-dl) - modified version, already included in source code
+- [`mpg123`](http://www.mpg123.de/) - version 1.15.1+
+- [`tweepy`](https://github.com/hezhao/tweepy) - my fork on [tweepy](https://github.com/tweepy/tweepy) which handles SSLError to remove crashes
+- [`Grooveshark`](https://github.com/hezhao/Grooveshark) - my fork on grooveshark [public API wrapper](https://github.com/kaitlin/Grooveshark)
 
 
 ### License
