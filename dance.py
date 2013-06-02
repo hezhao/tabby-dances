@@ -20,7 +20,8 @@ class TabbyPlayer():
         self.artist = None
         self.title = None
 
-    def tabbyLogger(self, msg, level='INFO'):
+    @staticmethod
+    def tabbyLogger(msg, level='INFO'):
         '''
         Python logging module sucks, I only print simple messages
         with timestamp in console
@@ -40,7 +41,7 @@ class TabbyPlayer():
         except Exception, e:
             self.tabbyLogger(str(e), 'ERROR')
             return
-        self.tabbyLogger(tweet)
+        self.tabbyLogger('SEND: ' + tweet)
 
     def play(self, songUrl):
         '''
@@ -80,7 +81,7 @@ class TabbyPlayer():
         # play song: '@wktabby play <song/musician name>'
         if cmd[1] == 'play':
             query = ' '.join(cmd[2:])
-            self.tabbyLogger(query)
+            self.tabbyLogger('SEARCH: ' + query)
             self.mention_from = tweet.user.screen_name
             self.in_reply_to_status_id = tweet.id
             self.grooveStream(query)
@@ -101,24 +102,31 @@ class TabbyPlayer():
             except Exception, e:
                 self.tabbyLogger(str(e), 'ERROR')
                 return
-            self.tabbyLogger(tweet)
+            self.tabbyLogger('SEND: ' + tweet)
 
     def playLastestMentionSong(self, tweet):
         '''
         Parse tweet and play song
         '''
-        self.tabbyLogger(':playLastestMentionSong')
+        # only check @mentions when player is idle
+        if self.isPlaying():
+            self.tabbyLogger('Song is playing...')
+            return
+
         if self.api == None:
             self.api = tweepy.API(auth)
         self.parseTweet(tweet)
 
 
-
 class TwitterStreamListener(tweepy.StreamListener):
+    # class variable
+    player = None
+    
     def on_status(self, status):
-        print('@' + status.user.screen_name + ' ' + status.text)
-        player = TabbyPlayer()
-        player.playLastestMentionSong(status)
+        TabbyPlayer.tabbyLogger('RECEIVE: '+ '@' + status.user.screen_name + ' ' + status.text)
+        if self.player is None:
+            self.player = TabbyPlayer()
+        self.player.playLastestMentionSong(status)
         
     def on_error(self, status_code):
         print >> sys.stderr, 'Encountered error with status code:', status_code
